@@ -42,105 +42,64 @@ exports.googleLoginUrl = (req, res) => {
 };
 
 exports.googleCallback = async (req, res) => {
-  const { code, state } = req.query;
-
-  let redirectTarget = process.env.FRONTEND_URL;
-
-  if (state) {
-    try {
-      const parsed = JSON.parse(Buffer.from(state, "base64").toString());
-      redirectTarget = parsed.redirectTarget || redirectTarget;
-    } catch (err) {
-      console.error("Invalid state:", err);
-    }
-  }
-
+  const { code } = req.query;
   if (!code) {
-    return res.redirect(`${redirectTarget}/login?error=missing_code`);
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_code`);
   }
 
   try {
     const { tokens } = await client.getToken(code);
-
     const ticket = await client.verifyIdToken({
       idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: process.env.GOOGLE_CLIENT_ID
     });
-
     const payload = ticket.getPayload();
-
     const email = payload.email;
-    const name = payload.name || "";
+    const name = payload.name || '';
 
-    const domain = email.split("@")[1];
-
+    const domain = email.split('@')[1];
     if (!domain) {
-      return res.redirect(`${redirectTarget}/login?error=invalid_email`);
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_email`);
     }
 
     const allowed = await AllowedDomain.findOne({
-      where: {
-        domain,
-        is_active: true,
-      },
+      where: { domain, is_active: true }
     });
-
     if (!allowed) {
-      return res.redirect(`${redirectTarget}/login?error=domain_not_allowed`);
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=domain_not_allowed`);
     }
 
-    let user = await User.findOne({
-      where: { email },
-    });
-
+    let user = await User.findOne({ where: { email } });
     if (user) {
-      if (user.status === "blocked" || user.status === "suspended") {
-        return res.redirect(`${redirectTarget}/login?error=blocked`);
+      if (user.status === 'blocked' || user.status === 'suspended') {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=blocked`);
       }
-
       const token = jwt.sign(
-        {
-          userId: user.id,
-          isAdmin: false,
-        },
+        { userId: user.id, isAdmin: false },
         process.env.JWT_SECRET,
-        {
-          expiresIn: "1d",
-        },
+        { expiresIn: '1d' }
       );
-
       await UserSession.create({
         id: uuidv4(),
         user_id: user.id,
         token,
-        status: "active",
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        status: 'active',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
       });
-
-      return res.redirect(`${redirectTarget}/auth/callback?token=${token}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
     }
 
     const regToken = jwt.sign(
-      {
-        email,
-        name,
-        purpose: "google-registration",
-      },
+      { email, name, purpose: 'google-registration' },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "5m",
-      },
+      { expiresIn: '5m' }
     );
-
     return res.redirect(
-      `${redirectTarget}/register?registration_token=${regToken}&email=${encodeURIComponent(
-        email,
-      )}&name=${encodeURIComponent(name)}`,
+      `${process.env.FRONTEND_URL}/register?registration_token=${regToken}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`
     );
   } catch (error) {
-    console.error("Google callback error:", error);
-
-    return res.redirect(`${redirectTarget}/login?error=auth_failed`);
+    console.error('Google callback error:', error);
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
   }
 };
 
