@@ -8,7 +8,7 @@ CapacitorApp.addListener("appUrlOpen", ({ url }) => {
   console.log("Deep link received:", url);
 
   if (url.startsWith("trackv2://oauth-callback")) {
-    window.location.href = "/";
+    window.location.href = "/officials/home";
   }
 });
 
