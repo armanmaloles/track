@@ -19,19 +19,26 @@ const client = new OAuth2Client(
 );
 
 exports.googleLoginUrl = (req, res) => {
-  const redirectTarget = req.query.redirectTarget || process.env.FRONTEND_URL;
+  try {
+    const redirectTarget = req.query.redirectTarget || process.env.FRONTEND_URL;
 
-  const state = Buffer.from(JSON.stringify({ redirectTarget })).toString(
-    "base64",
-  );
+    const state = Buffer.from(JSON.stringify({ redirectTarget })).toString(
+      "base64",
+    );
 
-  const url = client.generateAuthUrl({
-    access_type: "offline",
-    scope: ["email", "profile"],
-    state,
-  });
+    const url = client.generateAuthUrl({
+      access_type: "offline",
+      scope: ["email", "profile"],
+      state,
+    });
 
-  res.json({ url });
+    return res.json({ url });
+  } catch (err) {
+    console.error("googleLoginUrl error:", err);
+    return res.status(500).json({
+      message: "Failed to generate Google auth URL",
+    });
+  }
 };
 
 exports.googleCallback = async (req, res) => {

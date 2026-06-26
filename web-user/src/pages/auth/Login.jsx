@@ -26,8 +26,13 @@ export default function Login() {
         setError("Failed to get Google login URL.");
       }
     } catch (err) {
+      console.log("FULL ERROR:", err);
+      console.log("RESPONSE:", err?.response);
+
       setError(
-        err?.response?.data?.message || "Could not initiate Google login.",
+        err?.response?.data?.message ||
+          err.message ||
+          "Could not initiate Google login.",
       );
     } finally {
       setLoading(false);

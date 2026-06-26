@@ -16,7 +16,7 @@ router.post('/login', login);
 router.post('/register', register);
 
 // Google SSO
-router.get('/google', googleLoginUrl);
+router.get('/google/url', googleLoginUrl);
 router.get('/google/callback', googleCallback);
 router.post('/complete-google-registration', completeGoogleRegistration);
 

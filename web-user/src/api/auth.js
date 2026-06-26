@@ -2,16 +2,14 @@ import apiClient from './client';
 import axios from 'axios';
 
 export const getGoogleUrl = async (redirectTarget) => {
-  const { data } = await axios.get(
+  const res = await axios.get(
     `${import.meta.env.VITE_API_URL}/auth/google/url`,
     {
-      params: {
-        redirectTarget,
-      },
+      params: { redirectTarget },
     }
   );
 
-  return data;
+  return res.data;
 };
 
 export const completeGoogleRegistration = async (registrationToken, accountCode) => {
