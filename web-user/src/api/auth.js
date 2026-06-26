@@ -1,8 +1,16 @@
 import apiClient from './client';
+import axios from 'axios';
 
-export const getGoogleUrl = async (redirectUrl) => {
-  const params = redirectUrl ? { redirect: redirectUrl } : {};
-  const { data } = await apiClient.get('/auth/google', { params });
+export const getGoogleUrl = async (redirectTarget) => {
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_API_URL}/auth/google/url`,
+    {
+      params: {
+        redirectTarget,
+      },
+    }
+  );
+
   return data;
 };
 

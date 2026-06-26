@@ -13,15 +13,22 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setError("");
     setLoading(true);
+
     try {
-      const data = await getGoogleUrl(window.location.origin);
+      const redirectTarget =
+        import.meta.env.VITE_OAUTH_REDIRECT_URL || window.location.origin;
+
+      const data = await getGoogleUrl(redirectTarget);
+
       if (data.url) {
         window.location.href = data.url;
       } else {
         setError("Failed to get Google login URL.");
       }
     } catch (err) {
-      setError(err?.response?.data?.message || "Could not initiate Google login.");
+      setError(
+        err?.response?.data?.message || "Could not initiate Google login.",
+      );
     } finally {
       setLoading(false);
     }
@@ -34,7 +41,8 @@ export default function Login() {
         <div className={styles.loginCard}>
           <h2 className={styles.title}>Welcome Back</h2>
           <p className={styles.description}>
-            Sign in with your official Google account to access your calendars and tasks.
+            Sign in with your official Google account to access your calendars
+            and tasks.
           </p>
 
           <button
@@ -50,9 +58,12 @@ export default function Login() {
           {error && <p className={styles.errorText}>{error}</p>}
 
           <div className={styles.registerSection}>
-            <span className={styles.registerText}>Don't have an account yet?</span>
+            <span className={styles.registerText}>
+              Don't have an account yet?
+            </span>
             <p className={styles.info}>
-              First-time users must authenticate with Google and provide an account code.
+              First-time users must authenticate with Google and provide an
+              account code.
             </p>
             <Link to="/register" className={styles.secondaryButton}>
               Create Account
