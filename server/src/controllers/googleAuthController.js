@@ -44,7 +44,7 @@ exports.googleLoginUrl = (req, res) => {
 exports.googleCallback = async (req, res) => {
   const { code } = req.query;
   if (!code) {
-    return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_code`);
+    return res.redirect(`${process.env.FRONTEND_URL}`);
   }
 
   try {
@@ -59,20 +59,20 @@ exports.googleCallback = async (req, res) => {
 
     const domain = email.split('@')[1];
     if (!domain) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_email`);
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     }
 
     const allowed = await AllowedDomain.findOne({
       where: { domain, is_active: true }
     });
     if (!allowed) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=domain_not_allowed`);
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     }
 
     let user = await User.findOne({ where: { email } });
     if (user) {
       if (user.status === 'blocked' || user.status === 'suspended') {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=blocked`);
+        return res.redirect(`${process.env.FRONTEND_URL}`);
       }
       const token = jwt.sign(
         { userId: user.id, isAdmin: false },
@@ -86,7 +86,7 @@ exports.googleCallback = async (req, res) => {
         status: 'active',
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
       });
-      return res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+      return res.redirect(`${process.env.FRONTEND_URL}`);
     }
 
     const regToken = jwt.sign(
@@ -95,11 +95,11 @@ exports.googleCallback = async (req, res) => {
       { expiresIn: '5m' }
     );
     return res.redirect(
-      `${process.env.FRONTEND_URL}/register?registration_token=${regToken}&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`
+      `${process.env.FRONTEND_URL}`
     );
   } catch (error) {
     console.error('Google callback error:', error);
-    return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+    return res.redirect(`${process.env.FRONTEND_URL}`);
   }
 };
 
