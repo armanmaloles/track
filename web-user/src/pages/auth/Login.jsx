@@ -1,14 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { getGoogleUrl } from "../../api/auth";
 import BrandHeader from "../../components/common/BrandHeader";
 import Footer from "../../components/layout/Footer";
 import styles from "./Login.module.css";
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const registrationToken = searchParams.get("registration_token");
+    const email = searchParams.get("email");
+    if (registrationToken) {
+      navigate(
+        `/register?registration_token=${encodeURIComponent(
+          registrationToken,
+        )}${email ? `&email=${encodeURIComponent(email)}` : ""}`,
+        { replace: true },
+      );
+    }
+  }, [searchParams, navigate]);
 
   const handleGoogleLogin = async () => {
     setError("");
@@ -16,7 +31,8 @@ export default function Login() {
 
     try {
       const redirectTarget =
-        import.meta.env.VITE_OAUTH_REDIRECT_URL || window.location.origin;
+        import.meta.env.VITE_OAUTH_REDIRECT_URL ||
+        `${window.location.origin}/auth/callback`;
 
       const data = await getGoogleUrl(redirectTarget);
 

@@ -43,11 +43,25 @@ exports.googleLoginUrl = (req, res) => {
 
 exports.googleCallback = async (req, res) => {
   const { code, state } = req.query;
+  const frontendUrl = process.env.FRONTEND_URL;
+  let redirectTarget = frontendUrl;
+
   if (!code) {
-    return res.redirect(`${process.env.FRONTEND_URL}?error=no_code`);
+    return res.redirect(`${frontendUrl}?error=no_code`);
   }
 
   try {
+    if (state) {
+      try {
+        const parsed = JSON.parse(Buffer.from(state, 'base64').toString());
+        if (parsed.redirectTarget) {
+          redirectTarget = parsed.redirectTarget;
+        }
+      } catch (err) {
+        console.warn('Invalid OAuth state:', err);
+      }
+    }
+
     const { tokens } = await client.getToken(code);
     const ticket = await client.verifyIdToken({
       idToken: tokens.id_token,
@@ -59,20 +73,20 @@ exports.googleCallback = async (req, res) => {
 
     const domain = email.split('@')[1];
     if (!domain) {
-      return res.redirect(`${process.env.FRONTEND_URL}?error=invalid_domain`);
+      return res.redirect(`${frontendUrl}?error=invalid_domain`);
     }
 
     const allowed = await AllowedDomain.findOne({
       where: { domain, is_active: true }
     });
     if (!allowed) {
-      return res.redirect(`${process.env.FRONTEND_URL}?error=domain_not_allowed`);
+      return res.redirect(`${frontendUrl}?error=domain_not_allowed`);
     }
 
     let user = await User.findOne({ where: { email } });
     if (user) {
       if (user.status === 'blocked' || user.status === 'suspended') {
-        return res.redirect(`${process.env.FRONTEND_URL}?error=user_blocked`);
+        return res.redirect(`${frontendUrl}?error=user_blocked`);
       }
       const token = jwt.sign(
         { userId: user.id, isAdmin: false },
@@ -86,7 +100,7 @@ exports.googleCallback = async (req, res) => {
         status: 'active',
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000)
       });
-      return res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+      return res.redirect(`${redirectTarget}?token=${token}`);
     }
 
     const regToken = jwt.sign(
@@ -95,7 +109,7 @@ exports.googleCallback = async (req, res) => {
       { expiresIn: '5m' }
     );
     return res.redirect(
-      `${process.env.FRONTEND_URL}?registration_token=${regToken}&email=${encodeURIComponent(email)}`
+      `${redirectTarget}?registration_token=${regToken}&email=${encodeURIComponent(email)}`
     );
   } catch (error) {
     console.error('Google callback error:', error);

@@ -9,14 +9,38 @@ import styles from "./Register.module.css";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-  const registrationToken = searchParams.get("registration_token");
-  const email = searchParams.get("email");
+  const urlRegistrationToken = searchParams.get("registration_token");
+  const urlEmail = searchParams.get("email");
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const [accountCode, setAccountCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // registration token/email can come from URL (web) or sessionStorage (mobile deep link)
+  const [registrationToken, setRegistrationToken] = useState(() => {
+    try {
+      const sessToken = sessionStorage.getItem("registrationToken");
+      const sessEmail = sessionStorage.getItem("registrationEmail");
+      if (sessToken) {
+        // consume and remove so it's not reused
+        sessionStorage.removeItem("registrationToken");
+        sessionStorage.removeItem("registrationEmail");
+      }
+      return urlRegistrationToken || sessToken || null;
+    } catch (err) {
+      return urlRegistrationToken || null;
+    }
+  });
+
+  const [email, setEmail] = useState(() => {
+    try {
+      const sessEmail = sessionStorage.getItem("registrationEmail");
+      return urlEmail || sessEmail || "";
+    } catch (err) {
+      return urlEmail || "";
+    }
+  });
 
   // STEP 1: Google SSO button (no token)
   if (!registrationToken) {

@@ -10,10 +10,20 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const token = searchParams.get('token');
+    const registrationToken = searchParams.get('registration_token');
+    const email = searchParams.get('email');
     const error = searchParams.get('error');
 
     if (error) {
       navigate(`/login?error=${error}`, { replace: true });
+      return;
+    }
+
+    if (registrationToken) {
+      const registrationUrl = `/register?registration_token=${encodeURIComponent(
+        registrationToken,
+      )}${email ? `&email=${encodeURIComponent(email)}` : ''}`;
+      navigate(registrationUrl, { replace: true });
       return;
     }
 

@@ -20,6 +20,8 @@ CapacitorApp.addListener("appUrlOpen", ({ url }) => {
     } else if (registrationToken) {
       sessionStorage.setItem("registrationToken", registrationToken);
       sessionStorage.setItem("registrationEmail", email);
+      window.location.href = "/register";
+      return;
     }
     
     // Navigate to app root - AuthContext will authenticate and redirect to /{role}/home

@@ -1,4 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import RequireAuth from './components/RequireAuth';
 
@@ -32,6 +40,41 @@ const RoleRedirect = () => {
   return <Navigate to={`/${role}/home`} replace />;
 };
 
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const searchParams = new URLSearchParams(location.search);
+    const registrationToken = searchParams.get('registration_token');
+    const email = searchParams.get('email');
+    const sessionRegistrationToken = sessionStorage.getItem('registrationToken');
+    const sessionEmail = sessionStorage.getItem('registrationEmail');
+
+    if (registrationToken || sessionRegistrationToken) {
+      const token = registrationToken || sessionRegistrationToken;
+      const emailValue = email || sessionEmail || '';
+      const registrationUrl = `/register?registration_token=${encodeURIComponent(
+        token,
+      )}${emailValue ? `&email=${encodeURIComponent(emailValue)}` : ''}`;
+      navigate(registrationUrl, { replace: true });
+      return;
+    }
+
+    if (user) {
+      const role = user.role || 'faculty';
+      navigate(`/${role}/home`, { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, location.search, navigate, user]);
+
+  return null;
+};
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -42,6 +85,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/request-account-code" element={<RequestAccountCode />} />
+          <Route path="/" element={<RootRedirect />} />
 
           {/* Protected layout */}
           <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
